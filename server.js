@@ -69,7 +69,7 @@ app.post('/api/compose', async (req, res) => {
 
     // === BOTTOM SECTION ===
     const bottomPadding = HEIGHT * 0.05;
-    const profileSize = 140;
+    const profileSize = 180;
     const profileX = topPadding;
     const profileY = HEIGHT - bottomPadding - profileSize;
 
@@ -93,7 +93,7 @@ app.post('/api/compose', async (req, res) => {
     }
 
     // TC Logo (bottom-right)
-    let logoSize = 240;
+    let logoSize = 180;
     let logoX = WIDTH - logoSize - topPadding;
     let logoY = HEIGHT - bottomPadding - logoSize;
     if (tc_logo_url) {
