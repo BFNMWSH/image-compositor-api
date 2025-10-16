@@ -42,11 +42,11 @@ app.post('/api/compose', async (req, res) => {
 
     // === PRODUCT SECTION with 5% padding ===
     const topPadding = WIDTH * 0.05;
-    const productHeight = 1700;
+    const productHeight = 1650;
     const productImg = await loadImage(await downloadImage(product_image_url));
 
     const productWidth = WIDTH - topPadding * 2;
-    const productDrawHeight = productHeight - topPadding * 2;
+    const productDrawHeight = productHeight - topPadding * 1;
 
     ctx.drawImage(productImg, topPadding, topPadding, productWidth, productDrawHeight);
 
