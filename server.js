@@ -68,7 +68,7 @@ app.post('/api/compose', async (req, res) => {
     ctx.fillText('CONTACT ME', WIDTH / 2, buttonY + buttonHeight / 2);
 
     // === BOTTOM SECTION ===
-    const bottomPadding = HEIGHT * 0.03;
+    const bottomPadding = 0;
     const profileSize = 170;
     const profileX = topPadding + WIDTH * 0.03;
     const profileY = HEIGHT - bottomPadding - profileSize;
