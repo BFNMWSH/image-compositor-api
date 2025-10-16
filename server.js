@@ -42,7 +42,7 @@ app.post('/api/compose', async (req, res) => {
 
     // === PRODUCT SECTION with 5% padding ===
     const topPadding = WIDTH * 0.03;
-    const productHeight = 1620;
+    const productHeight = 1700;
     const productImg = await loadImage(await downloadImage(product_image_url));
 
     const productWidth = WIDTH - topPadding * 2;
@@ -67,21 +67,21 @@ app.post('/api/compose', async (req, res) => {
     ctx.textBaseline = 'middle';
     ctx.fillText('CONTACT ME', WIDTH / 2, buttonY + buttonHeight / 2);
 
-    // === BOTTOM SECTION ===
-    const bottomPadding = 0;
-    const profileSize = 170;
-    const profileX = topPadding + WIDTH * 0.03;
-    const profileY = HEIGHT - bottomPadding - profileSize;
+// === BOTTOM SECTION ===
+const profilePadding = 20;      // padding only for profile
+const profileSize = 170;
+const profileX = topPadding + WIDTH * 0.03;
+const profileY = HEIGHT - profileSize - profilePadding;  // only profile has bottom padding
 
-    // Profile image
-    const profileImg = await loadImage(await downloadImage(profile_photo_url));
-    ctx.save();
-    ctx.beginPath();
-    ctx.arc(profileX + profileSize / 2, profileY + profileSize / 2, profileSize / 2, 0, Math.PI * 2);
-    ctx.closePath();
-    ctx.clip();
-    ctx.drawImage(profileImg, profileX, profileY, profileSize, profileSize);
-    ctx.restore();
+// Profile image
+const profileImg = await loadImage(await downloadImage(profile_photo_url));
+ctx.save();
+ctx.beginPath();
+ctx.arc(profileX + profileSize / 2, profileY + profileSize / 2, profileSize / 2, 0, Math.PI * 2);
+ctx.closePath();
+ctx.clip();
+ctx.drawImage(profileImg, profileX, profileY, profileSize, profileSize);
+ctx.restore();
 
     // Verified badge (top-left corner of profile)
     if (verified_badge_url) {
@@ -92,14 +92,15 @@ app.post('/api/compose', async (req, res) => {
       ctx.drawImage(badgeImg, badgeX, badgeY, badgeSize, badgeSize);
     }
 
-    // TC Logo (bottom-right)
-    let logoSize = 180;
-    let logoX = WIDTH - logoSize - topPadding;
-    let logoY = HEIGHT - bottomPadding - logoSize;
-    if (tc_logo_url) {
-      const tcLogo = await loadImage(await downloadImage(tc_logo_url));
-      ctx.drawImage(tcLogo, logoX, logoY, logoSize, logoSize);
-    }
+// TC Logo (bottom-right, flush to bottom)
+let logoSize = 180;
+let logoX = WIDTH - logoSize - topPadding;
+let logoY = HEIGHT - logoSize;  // no padding for logo
+if (tc_logo_url) {
+  const tcLogo = await loadImage(await downloadImage(tc_logo_url));
+  ctx.drawImage(tcLogo, logoX, logoY, logoSize, logoSize);
+}
+
 
     // === Full name & number centered vertically between profile and logo ===
     const profileCenterY = profileY + profileSize / 2;
