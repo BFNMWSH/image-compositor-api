@@ -62,7 +62,7 @@ app.post('/api/compose', async (req, res) => {
     ctx.fill();
 
     ctx.fillStyle = '#FFFFFF';
-    ctx.font = 'bold 42px Arial';
+    ctx.font = 'bold 42px Roboto';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText('CONTACT ME', WIDTH / 2, buttonY + buttonHeight / 2);
@@ -109,11 +109,11 @@ if (tc_logo_url) {
 
     ctx.textAlign = 'center';
     ctx.fillStyle = '#1e40af';
-    ctx.font = 'bold 40px Arial';
+    ctx.font = 'bold 40px Roboto';
     ctx.fillText(full_name.toUpperCase(), WIDTH / 2, verticalCenterY - 15);
 
     ctx.fillStyle = '#232424';
-    ctx.font = 'bold 32px Arial';
+    ctx.font = 'bold 32px Roboto';
     ctx.fillText(whatsapp_number, WIDTH / 2, verticalCenterY + 35);
 
     // Return final image
