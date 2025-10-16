@@ -1,8 +1,7 @@
 import express from 'express';
 import sharp from 'sharp';
 import fetch from 'node-fetch';
-import { createCanvas, loadImage } from 'canvas';
-import { registerFont } from 'canvas';
+import { createCanvas, loadImage, registerFont } from 'canvas';
 
 // Register all Poppins weights
 registerFont('./fonts/Poppins-Regular.ttf', { family: 'Poppins', weight: 'normal' });
@@ -10,7 +9,6 @@ registerFont('./fonts/Poppins-Medium.ttf', { family: 'Poppins', weight: '500' })
 registerFont('./fonts/Poppins-SemiBold.ttf', { family: 'Poppins', weight: '600' });
 registerFont('./fonts/Poppins-Bold.ttf', { family: 'Poppins', weight: 'bold' });
 registerFont('./fonts/Poppins-ExtraBold.ttf', { family: 'Poppins', weight: '800' });
-
 
 const app = express();
 app.use(express.json({ limit: '50mb' }));
@@ -24,14 +22,7 @@ async function downloadImage(url) {
 
 app.post('/api/compose', async (req, res) => {
   try {
-    const {
-      profile_photo_url,
-      product_image_url,
-      full_name,
-      whatsapp_number,
-      tc_logo_url,
-      verified_badge_url
-    } = req.body;
+    const { profile_photo_url, product_image_url, full_name, whatsapp_number, tc_logo_url, verified_badge_url } = req.body;
 
     if (!profile_photo_url || !product_image_url || !full_name || !whatsapp_number) {
       return res.status(400).json({
@@ -49,7 +40,7 @@ app.post('/api/compose', async (req, res) => {
     ctx.fillStyle = '#FFFFFF';
     ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
-    // === PRODUCT SECTION with 5% padding ===
+    // === PRODUCT SECTION with 3% padding ===
     const topPadding = WIDTH * 0.03;
     const productHeight = 1700;
     const productImg = await loadImage(await downloadImage(product_image_url));
@@ -63,7 +54,7 @@ app.post('/api/compose', async (req, res) => {
     const buttonHeight = 100;
     const buttonWidth = 600;
     const buttonX = (WIDTH - buttonWidth) / 2;
-    const buttonY = productHeight - (buttonHeight / 2);
+    const buttonY = productHeight - buttonHeight / 2;
 
     ctx.fillStyle = '#1e40af';
     ctx.beginPath();
@@ -76,23 +67,48 @@ app.post('/api/compose', async (req, res) => {
     ctx.textBaseline = 'middle';
     ctx.fillText('CONTACT ME', WIDTH / 2, buttonY + buttonHeight / 2);
 
-// === BOTTOM SECTION ===
-const profilePadding = 20;      // padding only for profile
-const profileSize = 170;
-const profileX = topPadding + WIDTH * 0.03;
-const profileY = HEIGHT - profileSize - profilePadding;  // only profile has bottom padding
+    // === BOTTOM SECTION ===
+    const profilePadding = 20; // bottom padding for profile
+    const profileSize = 170;
+    const profileX = WIDTH / 2 - profileSize / 2; // center horizontally
+    const profileY = HEIGHT - profileSize - profilePadding;
 
-// Profile image
-const profileImg = await loadImage(await downloadImage(profile_photo_url));
-ctx.save();
-ctx.beginPath();
-ctx.arc(profileX + profileSize / 2, profileY + profileSize / 2, profileSize / 2, 0, Math.PI * 2);
-ctx.closePath();
-ctx.clip();
-ctx.drawImage(profileImg, profileX, profileY, profileSize, profileSize);
-ctx.restore();
+    // Draw profile border
+    const borderWidth = 8;
+    ctx.beginPath();
+    ctx.arc(profileX + profileSize / 2, profileY + profileSize / 2, profileSize / 2 + borderWidth / 2, 0, Math.PI * 2);
+    ctx.strokeStyle = '#A0D8F1'; // light baby blue
+    ctx.lineWidth = borderWidth;
+    ctx.stroke();
 
-    // Verified badge (top-left corner of profile)
+    // Load profile image
+    const profileImg = await loadImage(await downloadImage(profile_photo_url));
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(profileX + profileSize / 2, profileY + profileSize / 2, profileSize / 2, 0, Math.PI * 2);
+    ctx.closePath();
+    ctx.clip();
+
+    // Center and fill profile image
+    const imgRatio = profileImg.width / profileImg.height;
+    let drawWidth, drawHeight, drawX, drawY;
+
+    if (imgRatio > 1) {
+      drawHeight = profileSize;
+      drawWidth = profileSize * imgRatio;
+      drawX = profileX - (drawWidth - profileSize) / 2;
+      drawY = profileY;
+    } else {
+      drawWidth = profileSize;
+      drawHeight = profileSize / imgRatio;
+      drawX = profileX;
+      drawY = profileY - (drawHeight - profileSize) / 2;
+    }
+
+    ctx.drawImage(profileImg, drawX, drawY, drawWidth, drawHeight);
+    ctx.restore();
+
+    // Verified badge
     if (verified_badge_url) {
       const badgeSize = 50;
       const badgeX = profileX - (badgeSize * 0.3);
@@ -101,28 +117,27 @@ ctx.restore();
       ctx.drawImage(badgeImg, badgeX, badgeY, badgeSize, badgeSize);
     }
 
-// TC Logo (bottom-right, flush to bottom)
-let logoSize = 180;
-let logoX = WIDTH - logoSize - topPadding;
-let logoY = HEIGHT - logoSize;  // no padding for logo
-if (tc_logo_url) {
-  const tcLogo = await loadImage(await downloadImage(tc_logo_url));
-  ctx.drawImage(tcLogo, logoX, logoY, logoSize, logoSize);
-}
+    // TC Logo flush to bottom-right
+    const logoSize = 180;
+    const logoX = WIDTH - logoSize - topPadding;
+    const logoY = HEIGHT - logoSize;
+    if (tc_logo_url) {
+      const tcLogo = await loadImage(await downloadImage(tc_logo_url));
+      ctx.drawImage(tcLogo, logoX, logoY, logoSize, logoSize);
+    }
 
-
-    // === Full name & number centered vertically between profile and logo ===
+    // Full name & WhatsApp centered vertically between profile and logo
     const profileCenterY = profileY + profileSize / 2;
     const logoCenterY = logoY + logoSize / 2;
-    const verticalCenterY = (profileCenterY + logoCenterY) / 2; // middle between both
+    const verticalCenterY = (profileCenterY + logoCenterY) / 2;
 
     ctx.textAlign = 'center';
     ctx.fillStyle = '#1e40af';
-    ctx.font = 'bold 40px Poppins';
+    ctx.font = '800 40px Poppins'; // ExtraBold for name
     ctx.fillText(full_name.toUpperCase(), WIDTH / 2, verticalCenterY - 15);
 
     ctx.fillStyle = '#232424';
-    ctx.font = 'bold 32px Poppins';
+    ctx.font = '600 32px Poppins'; // SemiBold for WhatsApp number
     ctx.fillText(whatsapp_number, WIDTH / 2, verticalCenterY + 35);
 
     // Return final image
