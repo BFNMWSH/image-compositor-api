@@ -69,7 +69,7 @@ app.post('/api/compose', async (req, res) => {
 
     // === BOTTOM SECTION ===
     const bottomPadding = HEIGHT * 0.06;
-    const profileSize = 180;
+    const profileSize = 170;
     const profileX = topPadding + WIDTH * 0.03;
     const profileY = HEIGHT - bottomPadding - profileSize;
 
@@ -111,7 +111,7 @@ app.post('/api/compose', async (req, res) => {
     ctx.font = 'bold 40px Arial';
     ctx.fillText(full_name.toUpperCase(), WIDTH / 2, verticalCenterY - 15);
 
-    ctx.fillStyle = '#000000';
+    ctx.fillStyle = '#232424';
     ctx.font = 'bold 32px Arial';
     ctx.fillText(whatsapp_number, WIDTH / 2, verticalCenterY + 35);
 
