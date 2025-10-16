@@ -93,7 +93,7 @@ app.post('/api/compose', async (req, res) => {
     }
 
     // TC Logo (bottom-right)
-    let logoSize = 120;
+    let logoSize = 240;
     let logoX = WIDTH - logoSize - topPadding;
     let logoY = HEIGHT - bottomPadding - logoSize;
     if (tc_logo_url) {
