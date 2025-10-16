@@ -23,7 +23,7 @@ async function downloadImage(url) {
 
 app.post('/api/compose', async (req, res) => {
   try {
-    const { profile_photo_url, product_image_url, full_name, whatsapp_number, tc_logo_url, verified_badge_url } = req.body;
+    const { profile_photo_url, product_image_url, full_name, whatsapp_number, tc_ref_code, tc_logo_url, verified_badge_url } = req.body;
 
     if (!profile_photo_url || !product_image_url || !full_name || !whatsapp_number) {
       return res.status(400).json({
@@ -142,6 +142,14 @@ app.post('/api/compose', async (req, res) => {
     const verticalCenterY = (profileCenterY + logoCenterY) / 2;
 
     ctx.textAlign = 'center';
+
+    // TC Ref Code (if provided)
+    if (tc_ref_code) {
+    ctx.fillStyle = '#1e40af';
+    ctx.font = 'bold 36px Poppins';
+    ctx.fillText(tc_ref_code, WIDTH / 2, verticalCenterY - 50);
+    }
+    
     ctx.fillStyle = '#1e40af';
     ctx.font = '800 40px Poppins'; // ExtraBold for name
     ctx.fillText(full_name.toUpperCase(), WIDTH / 2, verticalCenterY - 15);
@@ -165,7 +173,7 @@ app.post('/api/compose', async (req, res) => {
 // PDF ENDPOINT
 app.post('/api/compose-pdf', async (req, res) => {
   try {
-    const { profile_photo_url, product_image_url, full_name, whatsapp_number, tc_logo_url, verified_badge_url } = req.body;
+    const { profile_photo_url, product_image_url, full_name, whatsapp_number, tc_ref_code, tc_logo_url, verified_badge_url } = req.body;
 
     if (!profile_photo_url || !product_image_url || !full_name || !whatsapp_number) {
       return res.status(400).json({
@@ -290,6 +298,13 @@ app.post('/api/compose-pdf', async (req, res) => {
     const verticalCenterY = (profileCenterY + logoCenterY) / 2;
 
     ctx.textAlign = 'center';
+   
+    if (tc_ref_code) {
+    ctx.fillStyle = '#1e40af';
+    ctx.font = 'bold 32px Poppins';  // ← Slightly smaller for A4
+    ctx.fillText(tc_ref_code, CANVAS_WIDTH / 2, verticalCenterY - 45);
+    }
+    
     ctx.fillStyle = '#1e40af';
     ctx.font = '800 36px Poppins';
     ctx.fillText(full_name.toUpperCase(), CANVAS_WIDTH / 2, verticalCenterY - 13);
