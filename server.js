@@ -79,7 +79,7 @@ app.post('/api/compose', async (req, res) => {
 
     // === BOTTOM SECTION ===
     const profilePaddingBottom = 25; // bottom padding for profile
-    const profilePaddingLeft = WIDTH * 0.03; // 3% left padding
+    const profilePaddingLeft = WIDTH * 0.05; // 3% left padding
     const profileSize = 170;
     const profileX = profilePaddingLeft; // bottom-left corner with left padding
     const profileY = HEIGHT - profileSize - profilePaddingBottom;
