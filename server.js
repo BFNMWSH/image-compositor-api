@@ -78,10 +78,11 @@ app.post('/api/compose', async (req, res) => {
     ctx.fillText('CONTACT ME', WIDTH / 2, buttonY + buttonHeight / 2);
 
     // === BOTTOM SECTION ===
-    const profilePadding = 25; // bottom padding for profile
+    const profilePaddingBottom = 25; // bottom padding for profile
+    const profilePaddingLeft = WIDTH * 0.03; // 3% left padding
     const profileSize = 170;
-    const profileX = topPadding; // bottom-left corner
-    const profileY = HEIGHT - profileSize - profilePadding;
+    const profileX = profilePaddingLeft; // bottom-left corner with left padding
+    const profileY = HEIGHT - profileSize - profilePaddingBottom;
 
     // Draw profile border
     const borderWidth = 8;
