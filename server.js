@@ -68,9 +68,9 @@ app.post('/api/compose', async (req, res) => {
     ctx.fillText('CONTACT ME', WIDTH / 2, buttonY + buttonHeight / 2);
 
     // === BOTTOM SECTION ===
-    const bottomPadding = HEIGHT * 0.05;
+    const bottomPadding = HEIGHT * 0.08;
     const profileSize = 180;
-    const profileX = topPadding + WIDTH * 0.05;
+    const profileX = topPadding + WIDTH * 0.03;
     const profileY = HEIGHT - bottomPadding - profileSize;
 
     // Profile image
