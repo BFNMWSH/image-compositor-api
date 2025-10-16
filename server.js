@@ -54,7 +54,7 @@ app.post('/api/compose', async (req, res) => {
     const buttonHeight = 100;
     const buttonWidth = 600;
     const buttonX = (WIDTH - buttonWidth) / 2;
-    const buttonY = productHeight - buttonHeight / 2 - 80;
+    const buttonY = productHeight - buttonHeight / 2 - 40;
 
     ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
     ctx.shadowBlur = 15;
@@ -210,7 +210,7 @@ app.post('/api/compose-pdf', async (req, res) => {
     const buttonHeight = 90;
     const buttonWidth = 520;
     const buttonX = (CANVAS_WIDTH - buttonWidth) / 2;
-    const buttonY = productHeight - buttonHeight / 2 - 70;
+    const buttonY = productHeight - buttonHeight / 2 - 30;
 
     ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
     ctx.shadowBlur = 15;
