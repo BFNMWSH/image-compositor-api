@@ -147,7 +147,7 @@ app.post('/api/compose', async (req, res) => {
     if (tc_ref_code) {
     ctx.fillStyle = '#1e40af';
     ctx.font = 'bold 36px Poppins';
-    ctx.fillText(tc_ref_code, WIDTH / 2, verticalCenterY - 50);
+    ctx.fillText(tc_ref_code, WIDTH / 2, verticalCenterY - 60);
     }
     
     ctx.fillStyle = '#1e40af';
@@ -302,7 +302,7 @@ app.post('/api/compose-pdf', async (req, res) => {
     if (tc_ref_code) {
     ctx.fillStyle = '#1e40af';
     ctx.font = 'bold 32px Poppins';  // ← Slightly smaller for A4
-    ctx.fillText(tc_ref_code, CANVAS_WIDTH / 2, verticalCenterY - 45);
+    ctx.fillText(tc_ref_code, CANVAS_WIDTH / 2, verticalCenterY - 55);
     }
     
     ctx.fillStyle = '#1e40af';
