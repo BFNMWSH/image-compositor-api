@@ -68,7 +68,7 @@ app.post('/api/compose', async (req, res) => {
     ctx.fillText('CONTACT ME', WIDTH / 2, buttonY + buttonHeight / 2);
 
     // === BOTTOM SECTION ===
-    const bottomPadding = HEIGHT * 0.08;
+    const bottomPadding = HEIGHT * 0.06;
     const profileSize = 180;
     const profileX = topPadding + WIDTH * 0.03;
     const profileY = HEIGHT - bottomPadding - profileSize;
@@ -112,7 +112,7 @@ app.post('/api/compose', async (req, res) => {
     ctx.fillText(full_name.toUpperCase(), WIDTH / 2, verticalCenterY - 15);
 
     ctx.fillStyle = '#000000';
-    ctx.font = '32px Arial';
+    ctx.font = 'bold 32px Arial';
     ctx.fillText(whatsapp_number, WIDTH / 2, verticalCenterY + 35);
 
     // Return final image
