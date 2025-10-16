@@ -47,19 +47,29 @@ app.post('/api/compose', async (req, res) => {
 
     const productWidth = WIDTH - topPadding * 2;
     const productDrawHeight = productHeight - topPadding * 2;
-
     ctx.drawImage(productImg, topPadding, topPadding, productWidth, productDrawHeight);
 
-    // === CONTACT BUTTON ===
+    // === CONTACT BUTTON with shadow ===
     const buttonHeight = 100;
     const buttonWidth = 600;
     const buttonX = (WIDTH - buttonWidth) / 2;
     const buttonY = productHeight - buttonHeight / 2;
 
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
+    ctx.shadowBlur = 15;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 8;
+
     ctx.fillStyle = '#1e40af';
     ctx.beginPath();
     ctx.roundRect(buttonX, buttonY, buttonWidth, buttonHeight, 50);
     ctx.fill();
+
+    // Reset shadow for text
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 0;
 
     ctx.fillStyle = '#FFFFFF';
     ctx.font = 'bold 42px Poppins';
@@ -70,7 +80,7 @@ app.post('/api/compose', async (req, res) => {
     // === BOTTOM SECTION ===
     const profilePadding = 20; // bottom padding for profile
     const profileSize = 170;
-    const profileX = WIDTH / 2 - profileSize / 2; // center horizontally
+    const profileX = topPadding; // bottom-left corner
     const profileY = HEIGHT - profileSize - profilePadding;
 
     // Draw profile border
@@ -92,7 +102,6 @@ app.post('/api/compose', async (req, res) => {
     // Center and fill profile image
     const imgRatio = profileImg.width / profileImg.height;
     let drawWidth, drawHeight, drawX, drawY;
-
     if (imgRatio > 1) {
       drawHeight = profileSize;
       drawWidth = profileSize * imgRatio;
@@ -104,11 +113,10 @@ app.post('/api/compose', async (req, res) => {
       drawX = profileX;
       drawY = profileY - (drawHeight - profileSize) / 2;
     }
-
     ctx.drawImage(profileImg, drawX, drawY, drawWidth, drawHeight);
     ctx.restore();
 
-    // Verified badge
+    // Verified badge (top-left corner of profile)
     if (verified_badge_url) {
       const badgeSize = 50;
       const badgeX = profileX - (badgeSize * 0.3);
