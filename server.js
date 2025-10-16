@@ -42,7 +42,7 @@ app.post('/api/compose', async (req, res) => {
 
     // === PRODUCT SECTION with 5% padding ===
     const topPadding = WIDTH * 0.03;
-    const productHeight = 1600;
+    const productHeight = 1620;
     const productImg = await loadImage(await downloadImage(product_image_url));
 
     const productWidth = WIDTH - topPadding * 2;
@@ -68,7 +68,7 @@ app.post('/api/compose', async (req, res) => {
     ctx.fillText('CONTACT ME', WIDTH / 2, buttonY + buttonHeight / 2);
 
     // === BOTTOM SECTION ===
-    const bottomPadding = HEIGHT * 0.06;
+    const bottomPadding = HEIGHT * 0.03;
     const profileSize = 170;
     const profileX = topPadding + WIDTH * 0.03;
     const profileY = HEIGHT - bottomPadding - profileSize;
