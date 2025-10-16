@@ -2,6 +2,15 @@ import express from 'express';
 import sharp from 'sharp';
 import fetch from 'node-fetch';
 import { createCanvas, loadImage } from 'canvas';
+import { registerFont } from 'canvas';
+
+// Register all Poppins weights
+registerFont('./fonts/Poppins-Regular.ttf', { family: 'Poppins', weight: 'normal' });
+registerFont('./fonts/Poppins-Medium.ttf', { family: 'Poppins', weight: '500' });
+registerFont('./fonts/Poppins-SemiBold.ttf', { family: 'Poppins', weight: '600' });
+registerFont('./fonts/Poppins-Bold.ttf', { family: 'Poppins', weight: 'bold' });
+registerFont('./fonts/Poppins-ExtraBold.ttf', { family: 'Poppins', weight: '800' });
+
 
 const app = express();
 app.use(express.json({ limit: '50mb' }));
@@ -62,7 +71,7 @@ app.post('/api/compose', async (req, res) => {
     ctx.fill();
 
     ctx.fillStyle = '#FFFFFF';
-    ctx.font = 'bold 42px Roboto';
+    ctx.font = 'bold 42px Poppins';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText('CONTACT ME', WIDTH / 2, buttonY + buttonHeight / 2);
@@ -109,11 +118,11 @@ if (tc_logo_url) {
 
     ctx.textAlign = 'center';
     ctx.fillStyle = '#1e40af';
-    ctx.font = 'bold 40px Roboto';
+    ctx.font = 'bold 40px Poppins';
     ctx.fillText(full_name.toUpperCase(), WIDTH / 2, verticalCenterY - 15);
 
     ctx.fillStyle = '#232424';
-    ctx.font = 'bold 32px Roboto';
+    ctx.font = 'bold 32px Poppins';
     ctx.fillText(whatsapp_number, WIDTH / 2, verticalCenterY + 35);
 
     // Return final image
