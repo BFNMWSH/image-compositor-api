@@ -78,7 +78,7 @@ app.post('/api/compose', async (req, res) => {
     ctx.fillText('CONTACT ME', WIDTH / 2, buttonY + buttonHeight / 2);
 
     // === BOTTOM SECTION ===
-    const profilePadding = 20; // bottom padding for profile
+    const profilePadding = 25; // bottom padding for profile
     const profileSize = 170;
     const profileX = topPadding; // bottom-left corner
     const profileY = HEIGHT - profileSize - profilePadding;
@@ -87,7 +87,7 @@ app.post('/api/compose', async (req, res) => {
     const borderWidth = 8;
     ctx.beginPath();
     ctx.arc(profileX + profileSize / 2, profileY + profileSize / 2, profileSize / 2 + borderWidth / 2, 0, Math.PI * 2);
-    ctx.strokeStyle = '#A0D8F1'; // light baby blue
+    ctx.strokeStyle = '#4899d4'; // light baby blue
     ctx.lineWidth = borderWidth;
     ctx.stroke();
 
@@ -126,7 +126,7 @@ app.post('/api/compose', async (req, res) => {
     }
 
     // TC Logo flush to bottom-right
-    const logoSize = 180;
+    const logoSize = 190;
     const logoX = WIDTH - logoSize - topPadding;
     const logoY = HEIGHT - logoSize;
     if (tc_logo_url) {
