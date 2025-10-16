@@ -48,10 +48,16 @@ app.post('/api/compose', async (req, res) => {
     // Load and draw product image (main content - top section)
     const productImg = await loadImage(await downloadImage(product_image_url));
     const productHeight = 1450; // Height for product section
-    ctx.drawImage(productImg, 0, 0, WIDTH, productHeight);
+    
+    // Add 5% padding around product image
+    const padding = WIDTH * 0.05; // 5% padding
+    const productWidth = WIDTH - (padding * 2);
+    const productDrawHeight = productHeight - (padding * 2);
+    
+    ctx.drawImage(productImg, padding, padding, productWidth, productDrawHeight);
 
-    // Bottom section background - dark blue
-    ctx.fillStyle = '#1e3a8a';
+    // Bottom section background - white
+    ctx.fillStyle = '#FFFFFF';
     ctx.fillRect(0, productHeight, WIDTH, HEIGHT - productHeight);
 
     // "CONTACT ME" button area - slightly above bottom section
@@ -73,9 +79,9 @@ app.post('/api/compose', async (req, res) => {
     ctx.textBaseline = 'middle';
     ctx.fillText('CONTACT ME', WIDTH / 2, buttonY + buttonHeight / 2);
 
-    // Profile photo - circular, bottom left
+    // Profile photo - circular, centered horizontally
     const profileSize = 120;
-    const profileX = 80;
+    const profileX = (WIDTH - profileSize) / 2; // Center horizontally
     const profileY = productHeight + 100;
 
     const profileImg = await loadImage(await downloadImage(profile_photo_url));
@@ -96,15 +102,15 @@ app.post('/api/compose', async (req, res) => {
     ctx.arc(profileX + profileSize / 2, profileY + profileSize / 2, profileSize / 2, 0, Math.PI * 2);
     ctx.stroke();
 
-    // Name text - below profile photo
-    ctx.fillStyle = '#FFFFFF';
+    // Name text - centered, blue color
+    ctx.fillStyle = '#1e40af'; // Blue color
     ctx.font = 'bold 32px Arial';
-    ctx.textAlign = 'left';
-    ctx.fillText(full_name.toUpperCase(), profileX + profileSize + 30, profileY + 35);
+    ctx.textAlign = 'center';
+    ctx.fillText(full_name.toUpperCase(), WIDTH / 2, profileY + 35);
 
-    // WhatsApp number - below name
+    // WhatsApp number - centered, below name
     ctx.font = '28px Arial';
-    ctx.fillText(whatsapp_number, profileX + profileSize + 30, profileY + 75);
+    ctx.fillText(whatsapp_number, WIDTH / 2, profileY + 75);
 
     // TC Logo - bottom right
     if (tc_logo_url) {
@@ -115,17 +121,16 @@ app.post('/api/compose', async (req, res) => {
       ctx.drawImage(tcLogo, logoX, logoY, logoSize, logoSize);
     }
 
-    // Verified badge - next to name
+    // Verified badge - top left of profile picture
     if (verified_badge_url) {
-      const badgeSize = 35;
-      const nameWidth = ctx.measureText(full_name.toUpperCase()).width;
-      const badgeX = profileX + profileSize + 40 + nameWidth + 10;
-      const badgeY = profileY + 17;
+      const badgeSize = 40;
+      const badgeX = profileX - (badgeSize * 0.3); // Slightly overlapping left edge
+      const badgeY = profileY - (badgeSize * 0.3); // Slightly overlapping top edge
       const verifiedBadge = await loadImage(await downloadImage(verified_badge_url));
       ctx.drawImage(verifiedBadge, badgeX, badgeY, badgeSize, badgeSize);
     }
 
-// Convert canvas to buffer
+    // Convert canvas to buffer
     const buffer = canvas.toBuffer('image/png');
 
     // Return image directly as binary
