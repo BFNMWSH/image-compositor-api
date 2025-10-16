@@ -125,23 +125,13 @@ app.post('/api/compose', async (req, res) => {
       ctx.drawImage(verifiedBadge, badgeX, badgeY, badgeSize, badgeSize);
     }
 
-    // Convert canvas to buffer
+// Convert canvas to buffer
     const buffer = canvas.toBuffer('image/png');
 
-    // Optional: Upload to temporary storage or return base64
-    const base64Image = buffer.toString('base64');
-    const dataUrl = `data:image/png;base64,${base64Image}`;
-
-    // Return the image
-    res.json({
-      success: true,
-      url: dataUrl, // You can replace this with actual file hosting
-      message: 'Image generated successfully'
-    });
-
-    // Alternative: Return image directly
-    // res.set('Content-Type', 'image/png');
-    // res.send(buffer);
+    // Return image directly as binary
+    res.set('Content-Type', 'image/png');
+    res.set('Content-Disposition', `attachment; filename="${full_name.replace(/\s+/g, '_')}.png"`);
+    res.send(buffer);
 
   } catch (error) {
     console.error('Error composing image:', error);
