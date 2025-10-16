@@ -70,7 +70,7 @@ app.post('/api/compose', async (req, res) => {
     // === BOTTOM SECTION ===
     const bottomPadding = HEIGHT * 0.05;
     const profileSize = 180;
-    const profileX = topPadding;
+    const profileX = topPadding + WIDTH * 0.03;
     const profileY = HEIGHT - bottomPadding - profileSize;
 
     // Profile image
