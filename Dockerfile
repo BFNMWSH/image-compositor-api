@@ -1,6 +1,6 @@
 FROM node:18-slim
 
-# Install dependencies for canvas and FFmpeg
+# Install dependencies for canvas
 RUN apt-get update && apt-get install -y \
     build-essential \
     libcairo2-dev \
@@ -9,7 +9,6 @@ RUN apt-get update && apt-get install -y \
     libgif-dev \
     librsvg2-dev \
     python3 \
-    ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
