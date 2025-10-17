@@ -1,15 +1,7 @@
 import express from 'express';
-import sharp from 'sharp';
 import fetch from 'node-fetch';
-import { createCanvas, loadImage, registerFont } from 'canvas';
+import { createCanvas, loadImage } from 'canvas';
 import PDFDocument from 'pdfkit';
-
-// Register all Poppins weights
-registerFont('./fonts/Poppins-Regular.ttf', { family: 'Poppins', weight: 'normal' });
-registerFont('./fonts/Poppins-Medium.ttf', { family: 'Poppins', weight: '500' });
-registerFont('./fonts/Poppins-SemiBold.ttf', { family: 'Poppins', weight: '600' });
-registerFont('./fonts/Poppins-Bold.ttf', { family: 'Poppins', weight: 'bold' });
-registerFont('./fonts/Poppins-ExtraBold.ttf', { family: 'Poppins', weight: '800' });
 
 const app = express();
 app.use(express.json({ limit: '50mb' }));
@@ -73,23 +65,23 @@ app.post('/api/compose', async (req, res) => {
     ctx.shadowOffsetY = 0;
 
     ctx.fillStyle = '#FFFFFF';
-    ctx.font = 'bold 42px Poppins';
+    ctx.font = 'bold 42px sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText('CONTACT ME', WIDTH / 2, buttonY + buttonHeight / 2);
 
     // === BOTTOM SECTION ===
-    const profilePaddingBottom = 25; // bottom padding for profile
-    const profilePaddingLeft = WIDTH * 0.05; // 3% left padding
+    const profilePaddingBottom = 25;
+    const profilePaddingLeft = WIDTH * 0.05;
     const profileSize = 170;
-    const profileX = profilePaddingLeft; // bottom-left corner with left padding
+    const profileX = profilePaddingLeft;
     const profileY = HEIGHT - profileSize - profilePaddingBottom;
 
     // Draw profile border
     const borderWidth = 8;
     ctx.beginPath();
     ctx.arc(profileX + profileSize / 2, profileY + profileSize / 2, profileSize / 2 + borderWidth / 2, 0, Math.PI * 2);
-    ctx.strokeStyle = '#4899d4'; // light baby blue
+    ctx.strokeStyle = '#4899d4';
     ctx.lineWidth = borderWidth;
     ctx.stroke();
 
@@ -143,11 +135,11 @@ app.post('/api/compose', async (req, res) => {
 
     ctx.textAlign = 'center';
     ctx.fillStyle = '#1e40af';
-    ctx.font = '800 40px Poppins'; // ExtraBold for name
+    ctx.font = 'bold 40px sans-serif';
     ctx.fillText(full_name.toUpperCase(), WIDTH / 2, verticalCenterY - 15);
 
     ctx.fillStyle = '#232424';
-    ctx.font = '600 32px Poppins'; // SemiBold for WhatsApp number
+    ctx.font = '600 32px sans-serif';
     ctx.fillText(whatsapp_number, WIDTH / 2, verticalCenterY + 35);
 
     // Return final image
@@ -221,7 +213,7 @@ app.post('/api/compose-pdf', async (req, res) => {
     ctx.shadowOffsetY = 0;
 
     ctx.fillStyle = '#FFFFFF';
-    ctx.font = 'bold 38px Poppins';
+    ctx.font = 'bold 38px sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText('CONTACT ME', CANVAS_WIDTH / 2, buttonY + buttonHeight / 2);
@@ -291,11 +283,11 @@ app.post('/api/compose-pdf', async (req, res) => {
 
     ctx.textAlign = 'center';
     ctx.fillStyle = '#1e40af';
-    ctx.font = '800 36px Poppins';
+    ctx.font = 'bold 36px sans-serif';
     ctx.fillText(full_name.toUpperCase(), CANVAS_WIDTH / 2, verticalCenterY - 13);
 
     ctx.fillStyle = '#232424';
-    ctx.font = '600 28px Poppins';
+    ctx.font = '600 28px sans-serif';
     ctx.fillText(whatsapp_number, CANVAS_WIDTH / 2, verticalCenterY + 30);
 
     // Convert canvas to buffer
