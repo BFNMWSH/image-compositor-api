@@ -120,7 +120,7 @@ app.post('/api/compose', async (req, res) => {
 
     // Verified badge (top-left corner of profile)
     if (verified_badge_url) {
-      const badgeSize = 50;
+      const badgeSize = 70;
       const badgeX = profileX - (badgeSize * 0.3);
       const badgeY = profileY - (badgeSize * 0.3);
       const badgeImg = await loadImage(await downloadImage(verified_badge_url));
