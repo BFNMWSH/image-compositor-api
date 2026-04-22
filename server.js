@@ -20,11 +20,34 @@ registerFont('./fonts/Poppins-ExtraBold.ttf', { family: 'Poppins', weight: '800'
 const app = express();
 app.use(express.json({ limit: '50mb' }));
 
+const IMGBB_API_KEY = 'ef3789f3838bf122f75299136740f622';
+
 // Helper to download images
 async function downloadImage(url) {
   const response = await fetch(url);
   if (!response.ok) throw new Error(`Failed to fetch image: ${url}`);
   return Buffer.from(await response.arrayBuffer());
+}
+
+// Helper to upload a buffer to imgbb and return the hosted URL
+async function uploadToImgbb(buffer, filename) {
+  const base64 = buffer.toString('base64');
+  const params = new URLSearchParams();
+  params.append('key', IMGBB_API_KEY);
+  params.append('image', base64);
+  if (filename) params.append('name', filename);
+
+  const response = await fetch('https://api.imgbb.com/1/upload', {
+    method: 'POST',
+    body: params,
+  });
+
+  const data = await response.json();
+  if (!data.success) {
+    throw new Error(`imgbb upload failed: ${JSON.stringify(data)}`);
+  }
+
+  return data.data.url;
 }
 
 app.post('/api/compose', async (req, res) => {
@@ -33,6 +56,7 @@ app.post('/api/compose', async (req, res) => {
 
     if (!profile_photo_url || !product_image_url || !full_name || !whatsapp_number) {
       return res.status(400).json({
+        success: false,
         error: 'Missing required fields',
         required: ['profile_photo_url', 'product_image_url', 'full_name', 'whatsapp_number']
       });
@@ -85,17 +109,17 @@ app.post('/api/compose', async (req, res) => {
     ctx.fillText('CONTACT ME', WIDTH / 2, buttonY + buttonHeight / 2);
 
     // === BOTTOM SECTION ===
-    const profilePaddingBottom = 25; // bottom padding for profile
-    const profilePaddingLeft = WIDTH * 0.05; // 3% left padding
+    const profilePaddingBottom = 25;
+    const profilePaddingLeft = WIDTH * 0.05;
     const profileSize = 170;
-    const profileX = profilePaddingLeft; // bottom-left corner with left padding
+    const profileX = profilePaddingLeft;
     const profileY = HEIGHT - profileSize - profilePaddingBottom;
 
     // Draw profile border
     const borderWidth = 8;
     ctx.beginPath();
     ctx.arc(profileX + profileSize / 2, profileY + profileSize / 2, profileSize / 2 + borderWidth / 2, 0, Math.PI * 2);
-    ctx.strokeStyle = '#4899d4'; // light baby blue
+    ctx.strokeStyle = '#4899d4';
     ctx.lineWidth = borderWidth;
     ctx.stroke();
 
@@ -151,28 +175,33 @@ app.post('/api/compose', async (req, res) => {
 
     // TC Ref Code (if provided)
     if (tc_ref_code) {
-    ctx.fillStyle = '#1e40af';
-    ctx.font = 'bold 36px Poppins';
-    ctx.fillText(tc_ref_code, WIDTH / 2, verticalCenterY - 60);
+      ctx.fillStyle = '#1e40af';
+      ctx.font = 'bold 36px Poppins';
+      ctx.fillText(tc_ref_code, WIDTH / 2, verticalCenterY - 60);
     }
-    
+
     ctx.fillStyle = '#1e40af';
-    ctx.font = '800 40px Poppins'; // ExtraBold for name
+    ctx.font = '800 40px Poppins';
     ctx.fillText(full_name.toUpperCase(), WIDTH / 2, verticalCenterY - 15);
 
     ctx.fillStyle = '#232424';
-    ctx.font = '600 32px Poppins'; // SemiBold for WhatsApp number
+    ctx.font = '600 32px Poppins';
     ctx.fillText(whatsapp_number, WIDTH / 2, verticalCenterY + 35);
 
-    // Return final image
+    // Upload to imgbb and return JSON URL instead of raw binary
     const buffer = canvas.toBuffer('image/png');
-    res.set('Content-Type', 'image/png');
-    res.set('Content-Disposition', `attachment; filename="${full_name.replace(/\s+/g, '_')}.png"`);
-    res.send(buffer);
+    const filename = full_name.replace(/\s+/g, '_');
+    const imageUrl = await uploadToImgbb(buffer, filename);
+
+    res.status(200).json({
+      success: true,
+      url: imageUrl,
+      message: 'Image generated successfully'
+    });
 
   } catch (error) {
     console.error('Error composing image:', error);
-    res.status(500).json({ error: 'Failed to compose image', details: error.message });
+    res.status(500).json({ success: false, error: 'Failed to compose image', details: error.message });
   }
 });
 
@@ -188,22 +217,17 @@ app.post('/api/compose-pdf', async (req, res) => {
       });
     }
 
-    // A4 dimensions (595 x 842 points)
     const A4_WIDTH = 595.28;
     const A4_HEIGHT = 841.89;
-    
-    // Canvas dimensions (higher res for quality)
     const CANVAS_WIDTH = 1240;
     const CANVAS_HEIGHT = 1754;
     
     const canvas = createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
     const ctx = canvas.getContext('2d');
 
-    // Background white
     ctx.fillStyle = '#FFFFFF';
     ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-    // === PRODUCT SECTION with 3% padding ===
     const topPadding = CANVAS_WIDTH * 0.03;
     const productHeight = 1500;
     const productImg = await loadImage(await downloadImage(product_image_url));
@@ -212,7 +236,6 @@ app.post('/api/compose-pdf', async (req, res) => {
     const productDrawHeight = productHeight - topPadding * 2;
     ctx.drawImage(productImg, topPadding, topPadding, productWidth, productDrawHeight);
 
-    // === CONTACT BUTTON with shadow ===
     const buttonHeight = 90;
     const buttonWidth = 520;
     const buttonX = (CANVAS_WIDTH - buttonWidth) / 2;
@@ -228,7 +251,6 @@ app.post('/api/compose-pdf', async (req, res) => {
     ctx.roundRect(buttonX, buttonY, buttonWidth, buttonHeight, 45);
     ctx.fill();
 
-    // Reset shadow
     ctx.shadowColor = 'transparent';
     ctx.shadowBlur = 0;
     ctx.shadowOffsetX = 0;
@@ -240,14 +262,12 @@ app.post('/api/compose-pdf', async (req, res) => {
     ctx.textBaseline = 'middle';
     ctx.fillText('CONTACT ME', CANVAS_WIDTH / 2, buttonY + buttonHeight / 2);
 
-    // === BOTTOM SECTION ===
     const profilePaddingBottom = 22;
     const profilePaddingLeft = CANVAS_WIDTH * 0.05;
     const profileSize = 150;
     const profileX = profilePaddingLeft;
     const profileY = CANVAS_HEIGHT - profileSize - profilePaddingBottom;
 
-    // Draw profile border
     const borderWidth = 7;
     ctx.beginPath();
     ctx.arc(profileX + profileSize / 2, profileY + profileSize / 2, profileSize / 2 + borderWidth / 2, 0, Math.PI * 2);
@@ -255,7 +275,6 @@ app.post('/api/compose-pdf', async (req, res) => {
     ctx.lineWidth = borderWidth;
     ctx.stroke();
 
-    // Load profile image
     const profileImg = await loadImage(await downloadImage(profile_photo_url));
     ctx.save();
     ctx.beginPath();
@@ -263,7 +282,6 @@ app.post('/api/compose-pdf', async (req, res) => {
     ctx.closePath();
     ctx.clip();
 
-    // Center and fill profile image
     const imgRatio = profileImg.width / profileImg.height;
     let drawWidth, drawHeight, drawX, drawY;
     if (imgRatio > 1) {
@@ -280,7 +298,6 @@ app.post('/api/compose-pdf', async (req, res) => {
     ctx.drawImage(profileImg, drawX, drawY, drawWidth, drawHeight);
     ctx.restore();
 
-    // Verified badge
     if (verified_badge_url) {
       const badgeSize = 45;
       const badgeX = profileX - (badgeSize * 0.3);
@@ -289,7 +306,6 @@ app.post('/api/compose-pdf', async (req, res) => {
       ctx.drawImage(badgeImg, badgeX, badgeY, badgeSize, badgeSize);
     }
 
-    // TC Logo flush to bottom-right
     const logoSize = 165;
     const logoX = CANVAS_WIDTH - logoSize - topPadding;
     const logoY = CANVAS_HEIGHT - logoSize;
@@ -298,7 +314,6 @@ app.post('/api/compose-pdf', async (req, res) => {
       ctx.drawImage(tcLogo, logoX, logoY, logoSize, logoSize);
     }
 
-    // Full name & WhatsApp centered vertically
     const profileCenterY = profileY + profileSize / 2;
     const logoCenterY = logoY + logoSize / 2;
     const verticalCenterY = (profileCenterY + logoCenterY) / 2;
@@ -306,9 +321,9 @@ app.post('/api/compose-pdf', async (req, res) => {
     ctx.textAlign = 'center';
    
     if (tc_ref_code) {
-    ctx.fillStyle = '#1e40af';
-    ctx.font = 'bold 32px Poppins';  // ← Slightly smaller for A4
-    ctx.fillText(tc_ref_code, CANVAS_WIDTH / 2, verticalCenterY - 55);
+      ctx.fillStyle = '#1e40af';
+      ctx.font = 'bold 32px Poppins';
+      ctx.fillText(tc_ref_code, CANVAS_WIDTH / 2, verticalCenterY - 55);
     }
     
     ctx.fillStyle = '#1e40af';
@@ -319,23 +334,15 @@ app.post('/api/compose-pdf', async (req, res) => {
     ctx.font = '600 28px Poppins';
     ctx.fillText(whatsapp_number, CANVAS_WIDTH / 2, verticalCenterY + 30);
 
-    // Convert canvas to buffer
     const imageBuffer = canvas.toBuffer('image/png');
 
-    // Create PDF
-    const doc = new PDFDocument({
-      size: 'A4',
-      margin: 0
-    });
+    const doc = new PDFDocument({ size: 'A4', margin: 0 });
 
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="${full_name.replace(/\s+/g, '_')}.pdf"`);
 
     doc.pipe(res);
-    doc.image(imageBuffer, 0, 0, {
-      width: A4_WIDTH,
-      height: A4_HEIGHT
-    });
+    doc.image(imageBuffer, 0, 0, { width: A4_WIDTH, height: A4_HEIGHT });
     doc.end();
 
   } catch (error) {
@@ -365,49 +372,34 @@ async function generateFrame(frameNum, totalFrames, data, tempDir) {
   const canvas = createCanvas(WIDTH, HEIGHT);
   const ctx = canvas.getContext('2d');
 
-  // Calculate animation progress (0 to 1)
   const progress = frameNum / totalFrames;
-  
-  // Easing function for smooth animations
   const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
   const eased = easeOutCubic(progress);
 
-  // Background white
   ctx.fillStyle = '#FFFFFF';
   ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
-  // === PRODUCT SECTION - Fade in + slight zoom ===
   const topPadding = WIDTH * 0.03;
   const productHeight = 1700;
   
-  // Product fade and zoom animation (0-2 seconds)
   const productProgress = Math.min(progress * 2.5, 1);
   const productEased = easeOutCubic(productProgress);
-  const productOpacity = productEased;
-  const productZoom = 1 + (0.05 * (1 - productEased)); // Start slightly zoomed in
+  const productZoom = 1 + (0.05 * (1 - productEased));
   
-  ctx.globalAlpha = productOpacity;
+  ctx.globalAlpha = productEased;
   
   const productImg = await loadImage(await downloadImage(product_image_url));
   const productWidth = WIDTH - topPadding * 2;
   const productDrawHeight = productHeight - topPadding * 2;
   
-  // Apply zoom effect
   const zoomWidth = productWidth * productZoom;
   const zoomHeight = productDrawHeight * productZoom;
   const zoomOffsetX = (zoomWidth - productWidth) / 2;
   const zoomOffsetY = (zoomHeight - productDrawHeight) / 2;
   
-  ctx.drawImage(productImg, 
-    topPadding - zoomOffsetX, 
-    topPadding - zoomOffsetY, 
-    zoomWidth, 
-    zoomHeight
-  );
-  
+  ctx.drawImage(productImg, topPadding - zoomOffsetX, topPadding - zoomOffsetY, zoomWidth, zoomHeight);
   ctx.globalAlpha = 1;
 
-  // === CONTACT BUTTON - Slide up (starts at 1.5 seconds) ===
   const buttonProgress = Math.max(0, Math.min((progress - 0.3) * 2.5, 1));
   const buttonEased = easeOutCubic(buttonProgress);
   
@@ -420,32 +412,26 @@ async function generateFrame(frameNum, totalFrames, data, tempDir) {
 
   if (buttonProgress > 0) {
     ctx.globalAlpha = buttonEased;
-    
     ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
     ctx.shadowBlur = 15;
     ctx.shadowOffsetX = 0;
     ctx.shadowOffsetY = 8;
-
     ctx.fillStyle = '#1e40af';
     ctx.beginPath();
     ctx.roundRect(buttonX, buttonY, buttonWidth, buttonHeight, 50);
     ctx.fill();
-
     ctx.shadowColor = 'transparent';
     ctx.shadowBlur = 0;
     ctx.shadowOffsetX = 0;
     ctx.shadowOffsetY = 0;
-
     ctx.fillStyle = '#FFFFFF';
     ctx.font = 'bold 42px Poppins';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText('CONTACT ME', WIDTH / 2, buttonY + buttonHeight / 2);
-    
     ctx.globalAlpha = 1;
   }
 
-  // === BOTTOM SECTION - Fade in (starts at 2.5 seconds) ===
   const bottomProgress = Math.max(0, Math.min((progress - 0.5) * 2, 1));
   const bottomEased = easeOutCubic(bottomProgress);
 
@@ -458,7 +444,6 @@ async function generateFrame(frameNum, totalFrames, data, tempDir) {
     const profileX = profilePaddingLeft;
     const profileY = HEIGHT - profileSize - profilePaddingBottom;
 
-    // Draw profile border
     const borderWidth = 8;
     ctx.beginPath();
     ctx.arc(profileX + profileSize / 2, profileY + profileSize / 2, profileSize / 2 + borderWidth / 2, 0, Math.PI * 2);
@@ -466,7 +451,6 @@ async function generateFrame(frameNum, totalFrames, data, tempDir) {
     ctx.lineWidth = borderWidth;
     ctx.stroke();
 
-    // Load profile image
     const profileImg = await loadImage(await downloadImage(profile_photo_url));
     ctx.save();
     ctx.beginPath();
@@ -490,16 +474,12 @@ async function generateFrame(frameNum, totalFrames, data, tempDir) {
     ctx.drawImage(profileImg, drawX, drawY, drawWidth, drawHeight);
     ctx.restore();
 
-    // Verified badge
     if (verified_badge_url) {
       const badgeSize = 50;
-      const badgeX = profileX - (badgeSize * 0.3);
-      const badgeY = profileY - (badgeSize * 0.3);
       const badgeImg = await loadImage(await downloadImage(verified_badge_url));
-      ctx.drawImage(badgeImg, badgeX, badgeY, badgeSize, badgeSize);
+      ctx.drawImage(badgeImg, profileX - (badgeSize * 0.3), profileY - (badgeSize * 0.3), badgeSize, badgeSize);
     }
 
-    // TC Logo
     const logoSize = 190;
     const logoX = WIDTH - logoSize - topPadding;
     const logoY = HEIGHT - logoSize;
@@ -508,14 +488,12 @@ async function generateFrame(frameNum, totalFrames, data, tempDir) {
       ctx.drawImage(tcLogo, logoX, logoY, logoSize, logoSize);
     }
 
-    // Text with staggered fade in
     const profileCenterY = profileY + profileSize / 2;
     const logoCenterY = logoY + logoSize / 2;
     const verticalCenterY = (profileCenterY + logoCenterY) / 2;
 
     ctx.textAlign = 'center';
 
-    // TC Ref Code (fades in first)
     if (tc_ref_code) {
       const refProgress = Math.max(0, Math.min((progress - 0.55) * 3, 1));
       ctx.globalAlpha = easeOutCubic(refProgress) * bottomEased;
@@ -524,14 +502,12 @@ async function generateFrame(frameNum, totalFrames, data, tempDir) {
       ctx.fillText(tc_ref_code, WIDTH / 2, verticalCenterY - 80);
     }
 
-    // Full name (fades in second)
     const nameProgress = Math.max(0, Math.min((progress - 0.6) * 3, 1));
     ctx.globalAlpha = easeOutCubic(nameProgress) * bottomEased;
     ctx.fillStyle = '#1e40af';
     ctx.font = '800 40px Poppins';
     ctx.fillText(full_name.toUpperCase(), WIDTH / 2, verticalCenterY - 5);
 
-    // WhatsApp number (fades in last)
     const whatsappProgress = Math.max(0, Math.min((progress - 0.65) * 3, 1));
     ctx.globalAlpha = easeOutCubic(whatsappProgress) * bottomEased;
     ctx.fillStyle = '#232424';
@@ -541,7 +517,6 @@ async function generateFrame(frameNum, totalFrames, data, tempDir) {
     ctx.globalAlpha = 1;
   }
 
-  // Save frame
   const buffer = canvas.toBuffer('image/png');
   const framePath = path.join(tempDir, `frame_${String(frameNum).padStart(4, '0')}.png`);
   await writeFile(framePath, buffer);
@@ -563,17 +538,14 @@ app.post('/api/compose-video', async (req, res) => {
       });
     }
 
-    // Create temp directory
     await mkdir(tempDir, { recursive: true });
 
-    // Video settings
     const FPS = 30;
-    const DURATION = 5; // seconds
+    const DURATION = 5;
     const totalFrames = FPS * DURATION;
 
     console.log(`Generating ${totalFrames} frames...`);
 
-    // Generate all frames
     for (let i = 0; i < totalFrames; i++) {
       await generateFrame(i, totalFrames, req.body, tempDir);
       if (i % 30 === 0) console.log(`Generated frame ${i}/${totalFrames}`);
@@ -581,20 +553,14 @@ app.post('/api/compose-video', async (req, res) => {
 
     console.log('All frames generated, creating video...');
 
-    // Output video path
     const outputPath = path.join(__dirname, `output_${Date.now()}.mp4`);
 
-    // Create video from frames using FFmpeg
     await new Promise((resolve, reject) => {
       ffmpeg()
         .input(path.join(tempDir, 'frame_%04d.png'))
         .inputFPS(FPS)
         .videoCodec('libx264')
-        .outputOptions([
-          '-pix_fmt yuv420p',
-          '-preset medium',
-          '-crf 23'
-        ])
+        .outputOptions(['-pix_fmt yuv420p', '-preset medium', '-crf 23'])
         .output(outputPath)
         .on('end', resolve)
         .on('error', reject)
@@ -603,24 +569,19 @@ app.post('/api/compose-video', async (req, res) => {
 
     console.log('Video created successfully!');
 
-    // Send video file
     res.setHeader('Content-Type', 'video/mp4');
     res.setHeader('Content-Disposition', `attachment; filename="${full_name.replace(/\s+/g, '_')}.mp4"`);
     
     const videoBuffer = await promisify(require('fs').readFile)(outputPath);
     res.send(videoBuffer);
 
-    // Cleanup
     setTimeout(async () => {
       try {
-        // Delete temp frames
         const files = await promisify(require('fs').readdir)(tempDir);
         for (const file of files) {
           await unlink(path.join(tempDir, file));
         }
         await promisify(require('fs').rmdir)(tempDir);
-        
-        // Delete output video
         await unlink(outputPath);
         console.log('Cleanup completed');
       } catch (err) {
@@ -631,7 +592,6 @@ app.post('/api/compose-video', async (req, res) => {
   } catch (error) {
     console.error('Error composing video:', error);
     
-    // Cleanup on error
     try {
       if (existsSync(tempDir)) {
         const files = await promisify(require('fs').readdir)(tempDir);
