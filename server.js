@@ -75,10 +75,12 @@ app.post('/api/compose', async (req, res) => {
     const topPadding = WIDTH * 0.03;
     const productHeight = 1700;
     const productImg = await loadImage(await downloadImage(product_image_url));
-
+    
     const productWidth = WIDTH - topPadding * 2;
-    const productDrawHeight = productHeight - topPadding * 2;
-    ctx.drawImage(productImg, topPadding, topPadding, productWidth, productDrawHeight);
+    const productImgRatio = productImg.width / productImg.height;
+    const productDrawHeight = productWidth / productImgRatio;
+    const productDrawY = topPadding;
+    ctx.drawImage(productImg, topPadding, productDrawY, productWidth, productDrawHeight);
 
     // === CONTACT BUTTON with shadow ===
     const buttonHeight = 100;
@@ -181,7 +183,7 @@ app.post('/api/compose', async (req, res) => {
     }
 
     ctx.fillStyle = '#1e40af';
-    ctx.font = '800 40px Poppins';
+    ctx.font = '800 56px Poppins';
     ctx.fillText(full_name.toUpperCase(), WIDTH / 2, verticalCenterY - 15);
 
     ctx.fillStyle = '#232424';
