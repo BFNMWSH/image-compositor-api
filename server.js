@@ -63,7 +63,7 @@ app.post('/api/compose', async (req, res) => {
     }
 
     const WIDTH = 1080;
-    const HEIGHT = 1920;
+    const HEIGHT = 1350;
     const canvas = createCanvas(WIDTH, HEIGHT);
     const ctx = canvas.getContext('2d');
 
@@ -73,7 +73,7 @@ app.post('/api/compose', async (req, res) => {
 
     // === PRODUCT SECTION with 3% padding ===
     const topPadding = WIDTH * 0.03;
-    const productHeight = 1700;
+    const productHeight = 1150;
     const productImg = await loadImage(await downloadImage(product_image_url));
     
     const productWidth = WIDTH - topPadding * 2;
