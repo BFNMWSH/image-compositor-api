@@ -1,3 +1,5 @@
+require("dotenv").config();
+
 import express from 'express';
 import sharp from 'sharp';
 import fetch from 'node-fetch';
@@ -20,7 +22,7 @@ registerFont('./fonts/Poppins-ExtraBold.ttf', { family: 'Poppins', weight: '800'
 const app = express();
 app.use(express.json({ limit: '50mb' }));
 
-const IMGBB_API_KEY = 'ef3789f3838bf122f75299136740f622';
+const IMGBB_API_KEY = 'process.env.IMGBB_API_KEY';
 
 // Helper to download images
 async function downloadImage(url) {
