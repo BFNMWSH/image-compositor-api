@@ -1,5 +1,4 @@
-require("dotenv").config();
-
+import "dotenv/config";
 import express from 'express';
 import sharp from 'sharp';
 import fetch from 'node-fetch';
