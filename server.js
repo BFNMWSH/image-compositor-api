@@ -65,7 +65,7 @@ app.post('/api/compose', async (req, res) => {
     }
 
     const WIDTH = 1080;
-    const HEIGHT = 1650;
+    const HEIGHT = 1450;
     const canvas = createCanvas(WIDTH, HEIGHT);
     const ctx = canvas.getContext('2d');
 
