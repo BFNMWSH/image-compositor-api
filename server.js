@@ -138,9 +138,10 @@ app.post('/api/compose', async (req, res) => {
     const productImg = await loadImage(await downloadImage(product_image_url));
     drawImageFit(productImg, 32, 34, 1018, 1330, 'cover', '#f4f7f9', false);
 
-    // Footer background
+    // Footer background. This is intentionally taller than the design footer
+    // so product artwork can never show through behind the profile/name/logo.
     ctx.fillStyle = '#FFFFFF';
-    ctx.fillRect(-6, 1384, 1098, 280);
+    ctx.fillRect(-6, 1328, 1098, 336);
 
     // Contact button
     ctx.fillStyle = '#172189';
