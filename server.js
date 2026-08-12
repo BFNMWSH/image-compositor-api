@@ -77,9 +77,11 @@ app.post('/api/compose', async (req, res) => {
     ctx.fillStyle = '#FFFFFF';
     ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
-    function drawImageFit(img, x, y, width, height, fit = 'cover', fill = '#ffffff') {
-      ctx.fillStyle = fill;
-      ctx.fillRect(x, y, width, height);
+    function drawImageFit(img, x, y, width, height, fit = 'cover', fill = '#ffffff', paintFill = true) {
+      if (paintFill) {
+        ctx.fillStyle = fill;
+        ctx.fillRect(x, y, width, height);
+      }
 
       const sourceRatio = img.width / img.height;
       const targetRatio = width / height;
@@ -131,9 +133,10 @@ app.post('/api/compose', async (req, res) => {
       ctx.fillText(text, textX, textY, width);
     }
 
-    // Layout imported from default (4).json.
+    // Product image is the back-most layer. All footer/profile/text/logo
+    // elements are drawn after this so they always sit above the product art.
     const productImg = await loadImage(await downloadImage(product_image_url));
-    drawImageFit(productImg, 32, 34, 1018, 1330, 'cover', '#f4f7f9');
+    drawImageFit(productImg, 32, 34, 1018, 1330, 'cover', '#f4f7f9', false);
 
     // Footer background
     ctx.fillStyle = '#FFFFFF';
