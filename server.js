@@ -21,7 +21,7 @@ registerFont('./fonts/Poppins-ExtraBold.ttf', { family: 'Poppins', weight: '800'
 const app = express();
 app.use(express.json({ limit: '50mb' }));
 
-const IMGBB_API_KEY = 'process.env.IMGBB_API_KEY';
+const IMGBB_API_KEY = process.env.IMGBB_API_KEY;
 
 // Helper to download images
 async function downloadImage(url) {
@@ -32,6 +32,10 @@ async function downloadImage(url) {
 
 // Helper to upload a buffer to imgbb and return the hosted URL
 async function uploadToImgbb(buffer, filename) {
+  if (!IMGBB_API_KEY) {
+    throw new Error('IMGBB_API_KEY environment variable is not configured');
+  }
+
   const base64 = buffer.toString('base64');
   const params = new URLSearchParams();
   params.append('key', IMGBB_API_KEY);
@@ -191,14 +195,12 @@ app.post('/api/compose', async (req, res) => {
     ctx.font = '600 32px Poppins';
     ctx.fillText(whatsapp_number, WIDTH / 2, verticalCenterY + 35);
 
-    // Upload to imgbb and return JSON URL instead of raw binary
+    // Return a data URL so n8n can upload the composed image using its ImgBB credential.
     const buffer = canvas.toBuffer('image/png');
-    const filename = full_name.replace(/\s+/g, '_');
-    const imageUrl = await uploadToImgbb(buffer, filename);
 
     res.status(200).json({
       success: true,
-      url: imageUrl,
+      url: `data:image/png;base64,${buffer.toString('base64')}`,
       message: 'Image generated successfully'
     });
 
