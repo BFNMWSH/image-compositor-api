@@ -69,6 +69,8 @@ app.post('/api/compose', async (req, res) => {
 
     const WIDTH = 1080;
     const HEIGHT = 1450;
+    const footerHeight = 255;
+    const productAreaHeight = HEIGHT - footerHeight;
     const canvas = createCanvas(WIDTH, HEIGHT);
     const ctx = canvas.getContext('2d');
 
@@ -76,51 +78,43 @@ app.post('/api/compose', async (req, res) => {
     ctx.fillStyle = '#FFFFFF';
     ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
-    // === PRODUCT SECTION with 3% padding ===
+    // === PRODUCT SECTION ===
+    // Top-align and crop the supplied product creative so its own footer/details
+    // do not collide with the Social Hub footer we add below.
     const topPadding = WIDTH * 0.03;
-    const productHeight = 1650;
     const productImg = await loadImage(await downloadImage(product_image_url));
-    
-    const productWidth = WIDTH - topPadding * 2;
-    const productImgRatio = productImg.width / productImg.height;
-    const productDrawHeight = productWidth / productImgRatio;
-    const productDrawY = topPadding;
-    ctx.drawImage(productImg, topPadding, productDrawY, productWidth, productDrawHeight);
+    const sourceRatio = productImg.width / productImg.height;
+    const targetRatio = WIDTH / productAreaHeight;
+    let sourceX = 0;
+    let sourceY = 0;
+    let sourceWidth = productImg.width;
+    let sourceHeight = productImg.height;
 
-    // === CONTACT BUTTON with shadow ===
-    const buttonHeight = 100;
-    const buttonWidth = 600;
-    const buttonX = (WIDTH - buttonWidth) / 2;
-    const buttonY = productHeight - buttonHeight / 2 - 40;
+    if (sourceRatio < targetRatio) {
+      sourceHeight = productImg.width / targetRatio;
+    } else {
+      sourceWidth = productImg.height * targetRatio;
+      sourceX = (productImg.width - sourceWidth) / 2;
+    }
 
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
-    ctx.shadowBlur = 15;
-    ctx.shadowOffsetX = 0;
-    ctx.shadowOffsetY = 8;
+    ctx.drawImage(productImg, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, WIDTH, productAreaHeight);
 
-    ctx.fillStyle = '#1e40af';
-    ctx.beginPath();
-    ctx.roundRect(buttonX, buttonY, buttonWidth, buttonHeight, 50);
-    ctx.fill();
-
-    // Reset shadow for text
+    // === SOCIAL HUB FOOTER ===
+    const footerY = productAreaHeight;
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, footerY, WIDTH, footerHeight);
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.08)';
+    ctx.shadowBlur = 18;
+    ctx.shadowOffsetY = -4;
+    ctx.fillRect(0, footerY, WIDTH, 1);
     ctx.shadowColor = 'transparent';
     ctx.shadowBlur = 0;
-    ctx.shadowOffsetX = 0;
     ctx.shadowOffsetY = 0;
 
-    ctx.fillStyle = '#FFFFFF';
-    ctx.font = 'bold 42px Poppins';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('CONTACT ME', WIDTH / 2, buttonY + buttonHeight / 2);
-
-    // === BOTTOM SECTION ===
-    const profilePaddingBottom = 25;
-    const profilePaddingLeft = WIDTH * 0.05;
-    const profileSize = 170;
+    const profilePaddingLeft = 52;
+    const profileSize = 168;
     const profileX = profilePaddingLeft;
-    const profileY = HEIGHT - profileSize - profilePaddingBottom;
+    const profileY = footerY + (footerHeight - profileSize) / 2;
 
     // Draw profile border
     const borderWidth = 8;
@@ -164,36 +158,44 @@ app.post('/api/compose', async (req, res) => {
       ctx.drawImage(badgeImg, badgeX, badgeY, badgeSize, badgeSize);
     }
 
-    // TC Logo flush to bottom-right
-    const logoSize = 190;
+    // TC Logo flush to footer bottom-right
+    const logoSize = 165;
     const logoX = WIDTH - logoSize - topPadding;
-    const logoY = HEIGHT - logoSize;
+    const logoY = footerY + (footerHeight - logoSize) / 2;
     if (tc_logo_url) {
       const tcLogo = await loadImage(await downloadImage(tc_logo_url));
       ctx.drawImage(tcLogo, logoX, logoY, logoSize, logoSize);
     }
 
     // Full name & WhatsApp centered vertically between profile and logo
-    const profileCenterY = profileY + profileSize / 2;
-    const logoCenterY = logoY + logoSize / 2;
-    const verticalCenterY = (profileCenterY + logoCenterY) / 2;
+    const verticalCenterY = footerY + footerHeight / 2;
+    const textLeft = profileX + profileSize + 34;
+    const textRight = logoX - 32;
+    const textCenterX = (textLeft + textRight) / 2;
+    const textMaxWidth = textRight - textLeft;
 
     ctx.textAlign = 'center';
 
     // TC Ref Code (if provided)
     if (tc_ref_code) {
       ctx.fillStyle = '#1e40af';
-      ctx.font = 'bold 36px Poppins';
-      ctx.fillText(tc_ref_code, WIDTH / 2, verticalCenterY - 60);
+      ctx.font = 'bold 30px Poppins';
+      ctx.fillText(tc_ref_code, textCenterX, verticalCenterY - 58, textMaxWidth);
     }
 
+    const displayName = full_name.toUpperCase();
+    let nameFontSize = 56;
+    do {
+      ctx.font = `800 ${nameFontSize}px Poppins`;
+      nameFontSize -= 2;
+    } while (ctx.measureText(displayName).width > textMaxWidth && nameFontSize >= 34);
+
     ctx.fillStyle = '#1e40af';
-    ctx.font = '800 56px Poppins';
-    ctx.fillText(full_name.toUpperCase(), WIDTH / 2, verticalCenterY - 15);
+    ctx.fillText(displayName, textCenterX, verticalCenterY - 12, textMaxWidth);
 
     ctx.fillStyle = '#232424';
     ctx.font = '600 32px Poppins';
-    ctx.fillText(whatsapp_number, WIDTH / 2, verticalCenterY + 35);
+    ctx.fillText(whatsapp_number, textCenterX, verticalCenterY + 42, textMaxWidth);
 
     // Return a data URL so n8n can upload the composed image using its ImgBB credential.
     const buffer = canvas.toBuffer('image/png');
