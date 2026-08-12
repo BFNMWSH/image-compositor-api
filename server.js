@@ -68,9 +68,10 @@ app.post('/api/compose', async (req, res) => {
     }
 
     const WIDTH = 1080;
-    const HEIGHT = 1450;
     const footerHeight = 255;
-    const productAreaHeight = HEIGHT - footerHeight;
+    const productImg = await loadImage(await downloadImage(product_image_url));
+    const productDrawHeight = Math.round(WIDTH / (productImg.width / productImg.height));
+    const HEIGHT = productDrawHeight + footerHeight;
     const canvas = createCanvas(WIDTH, HEIGHT);
     const ctx = canvas.getContext('2d');
 
@@ -79,28 +80,12 @@ app.post('/api/compose', async (req, res) => {
     ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
     // === PRODUCT SECTION ===
-    // Top-align and crop the supplied product creative so its own footer/details
-    // do not collide with the Social Hub footer we add below.
+    // Preserve the full product creative, then append the Social Hub footer below.
     const topPadding = WIDTH * 0.03;
-    const productImg = await loadImage(await downloadImage(product_image_url));
-    const sourceRatio = productImg.width / productImg.height;
-    const targetRatio = WIDTH / productAreaHeight;
-    let sourceX = 0;
-    let sourceY = 0;
-    let sourceWidth = productImg.width;
-    let sourceHeight = productImg.height;
-
-    if (sourceRatio < targetRatio) {
-      sourceHeight = productImg.width / targetRatio;
-    } else {
-      sourceWidth = productImg.height * targetRatio;
-      sourceX = (productImg.width - sourceWidth) / 2;
-    }
-
-    ctx.drawImage(productImg, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, WIDTH, productAreaHeight);
+    ctx.drawImage(productImg, 0, 0, WIDTH, productDrawHeight);
 
     // === SOCIAL HUB FOOTER ===
-    const footerY = productAreaHeight;
+    const footerY = productDrawHeight;
     ctx.fillStyle = '#FFFFFF';
     ctx.fillRect(0, footerY, WIDTH, footerHeight);
     ctx.shadowColor = 'rgba(0, 0, 0, 0.08)';
