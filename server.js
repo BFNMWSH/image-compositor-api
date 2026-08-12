@@ -57,7 +57,8 @@ async function uploadToImgbb(buffer, filename) {
 
 app.post('/api/compose', async (req, res) => {
   try {
-    const { profile_photo_url, product_image_url, full_name, whatsapp_number, tc_ref_code, tc_logo_url, verified_badge_url } = req.body;
+    const { profile_photo_url, product_image_url, full_name, whatsapp_number, tc_ref, tc_ref_code, tc_logo_url, verified_badge_url } = req.body;
+    const referenceNumber = tc_ref || tc_ref_code || '';
 
     if (!profile_photo_url || !product_image_url || !full_name || !whatsapp_number) {
       return res.status(400).json({
@@ -68,10 +69,7 @@ app.post('/api/compose', async (req, res) => {
     }
 
     const WIDTH = 1080;
-    const footerHeight = 255;
-    const productImg = await loadImage(await downloadImage(product_image_url));
-    const productDrawHeight = Math.round(WIDTH / (productImg.width / productImg.height));
-    const HEIGHT = productDrawHeight + footerHeight;
+    const HEIGHT = 1650;
     const canvas = createCanvas(WIDTH, HEIGHT);
     const ctx = canvas.getContext('2d');
 
@@ -79,108 +77,132 @@ app.post('/api/compose', async (req, res) => {
     ctx.fillStyle = '#FFFFFF';
     ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
-    // === PRODUCT SECTION ===
-    // Preserve the full product creative, then append the Social Hub footer below.
-    const topPadding = WIDTH * 0.03;
-    ctx.drawImage(productImg, 0, 0, WIDTH, productDrawHeight);
+    function drawImageFit(img, x, y, width, height, fit = 'cover', fill = '#ffffff') {
+      ctx.fillStyle = fill;
+      ctx.fillRect(x, y, width, height);
 
-    // === SOCIAL HUB FOOTER ===
-    const footerY = productDrawHeight;
+      const sourceRatio = img.width / img.height;
+      const targetRatio = width / height;
+      let sourceX = 0;
+      let sourceY = 0;
+      let sourceWidth = img.width;
+      let sourceHeight = img.height;
+
+      if (fit === 'cover') {
+        if (sourceRatio < targetRatio) {
+          sourceHeight = img.width / targetRatio;
+          sourceY = (img.height - sourceHeight) / 2;
+        } else {
+          sourceWidth = img.height * targetRatio;
+          sourceX = (img.width - sourceWidth) / 2;
+        }
+        ctx.drawImage(img, sourceX, sourceY, sourceWidth, sourceHeight, x, y, width, height);
+        return;
+      }
+
+      const scale = Math.min(width / img.width, height / img.height);
+      const drawWidth = img.width * scale;
+      const drawHeight = img.height * scale;
+      ctx.drawImage(img, x + (width - drawWidth) / 2, y + (height - drawHeight) / 2, drawWidth, drawHeight);
+    }
+
+    function drawTextBox(text, x, y, width, height, options) {
+      const {
+        fontSize,
+        fontWeight,
+        fontFamily,
+        color,
+        textAlign = 'center',
+        verticalAlign = 'middle',
+      } = options;
+
+      let size = fontSize;
+      ctx.fillStyle = color;
+      ctx.textAlign = textAlign;
+      ctx.textBaseline = verticalAlign === 'middle' ? 'middle' : 'alphabetic';
+
+      do {
+        ctx.font = `${fontWeight} ${size}px ${fontFamily}`;
+        size -= 1;
+      } while (ctx.measureText(text).width > width && size >= 20);
+
+      const textX = textAlign === 'center' ? x + width / 2 : x;
+      const textY = verticalAlign === 'middle' ? y + height / 2 : y + height;
+      ctx.fillText(text, textX, textY, width);
+    }
+
+    // Layout imported from default (4).json.
+    const productImg = await loadImage(await downloadImage(product_image_url));
+    drawImageFit(productImg, 32, 34, 1018, 1330, 'cover', '#f4f7f9');
+
+    // Footer background
     ctx.fillStyle = '#FFFFFF';
-    ctx.fillRect(0, footerY, WIDTH, footerHeight);
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.08)';
-    ctx.shadowBlur = 18;
-    ctx.shadowOffsetY = -4;
-    ctx.fillRect(0, footerY, WIDTH, 1);
-    ctx.shadowColor = 'transparent';
-    ctx.shadowBlur = 0;
-    ctx.shadowOffsetY = 0;
+    ctx.fillRect(-6, 1384, 1098, 280);
 
-    const profilePaddingLeft = 52;
-    const profileSize = 168;
-    const profileX = profilePaddingLeft;
-    const profileY = footerY + (footerHeight - profileSize) / 2;
+    // Contact button
+    ctx.fillStyle = '#172189';
+    ctx.beginPath();
+    ctx.roundRect(385, 1404, 310, 56, 45);
+    ctx.fill();
+    drawTextBox('CONTACT ME', 385, 1404, 310, 56, {
+      fontSize: 36,
+      fontWeight: '600',
+      fontFamily: 'Arial',
+      color: '#ffffff',
+    });
 
-    // Draw profile border
-    const borderWidth = 8;
+    // Profile photo circle
+    const profileImg = await loadImage(await downloadImage(profile_photo_url));
+    const profileX = 46;
+    const profileY = 1415;
+    const profileSize = 217;
+    const borderWidth = 5;
     ctx.beginPath();
     ctx.arc(profileX + profileSize / 2, profileY + profileSize / 2, profileSize / 2 + borderWidth / 2, 0, Math.PI * 2);
-    ctx.strokeStyle = '#4899d4';
+    ctx.strokeStyle = '#00188f';
     ctx.lineWidth = borderWidth;
     ctx.stroke();
 
-    // Load profile image
-    const profileImg = await loadImage(await downloadImage(profile_photo_url));
     ctx.save();
     ctx.beginPath();
     ctx.arc(profileX + profileSize / 2, profileY + profileSize / 2, profileSize / 2, 0, Math.PI * 2);
     ctx.closePath();
     ctx.clip();
-
-    // Center and fill profile image
-    const imgRatio = profileImg.width / profileImg.height;
-    let drawWidth, drawHeight, drawX, drawY;
-    if (imgRatio > 1) {
-      drawHeight = profileSize;
-      drawWidth = profileSize * imgRatio;
-      drawX = profileX - (drawWidth - profileSize) / 2;
-      drawY = profileY;
-    } else {
-      drawWidth = profileSize;
-      drawHeight = profileSize / imgRatio;
-      drawX = profileX;
-      drawY = profileY - (drawHeight - profileSize) / 2;
-    }
-    ctx.drawImage(profileImg, drawX, drawY, drawWidth, drawHeight);
+    drawImageFit(profileImg, profileX, profileY, profileSize, profileSize, 'cover', '#edf2f7');
     ctx.restore();
 
-    // Verified badge (top-left corner of profile)
-    if (verified_badge_url) {
-      const badgeSize = 70;
-      const badgeX = profileX - (badgeSize * 0.3);
-      const badgeY = profileY - (badgeSize * 0.3);
-      const badgeImg = await loadImage(await downloadImage(verified_badge_url));
-      ctx.drawImage(badgeImg, badgeX, badgeY, badgeSize, badgeSize);
-    }
-
-    // TC Logo flush to footer bottom-right
-    const logoSize = 165;
-    const logoX = WIDTH - logoSize - topPadding;
-    const logoY = footerY + (footerHeight - logoSize) / 2;
+    // TC logo
     if (tc_logo_url) {
       const tcLogo = await loadImage(await downloadImage(tc_logo_url));
-      ctx.drawImage(tcLogo, logoX, logoY, logoSize, logoSize);
+      drawImageFit(tcLogo, 793, 1396, 253, 239, 'contain', '#ffffff');
     }
 
-    // Full name & WhatsApp centered vertically between profile and logo
-    const verticalCenterY = footerY + footerHeight / 2;
-    const textLeft = profileX + profileSize + 34;
-    const textRight = logoX - 32;
-    const textCenterX = (textLeft + textRight) / 2;
-    const textMaxWidth = textRight - textLeft;
-
-    ctx.textAlign = 'center';
-
-    // TC Ref Code (if provided)
-    if (tc_ref_code) {
-      ctx.fillStyle = '#1e40af';
-      ctx.font = 'bold 30px Poppins';
-      ctx.fillText(tc_ref_code, textCenterX, verticalCenterY - 58, textMaxWidth);
+    // Text fields
+    if (referenceNumber) {
+      drawTextBox(referenceNumber, 272, 1475, 536, 42, {
+        fontSize: 30,
+        fontWeight: '700',
+        fontFamily: 'Arial',
+        color: '#0a348f',
+      });
     }
+    drawTextBox(full_name, 272, 1508, 536, 52, {
+      fontSize: 42,
+      fontWeight: '800',
+      fontFamily: 'Arial',
+      color: '#0f172a',
+    });
 
-    const displayName = full_name.toUpperCase();
-    let nameFontSize = 56;
-    do {
-      ctx.font = `800 ${nameFontSize}px Poppins`;
-      nameFontSize -= 2;
-    } while (ctx.measureText(displayName).width > textMaxWidth && nameFontSize >= 34);
-
-    ctx.fillStyle = '#1e40af';
-    ctx.fillText(displayName, textCenterX, verticalCenterY - 12, textMaxWidth);
-
-    ctx.fillStyle = '#232424';
-    ctx.font = '600 32px Poppins';
-    ctx.fillText(whatsapp_number, textCenterX, verticalCenterY + 42, textMaxWidth);
+    if (verified_badge_url) {
+      const badgeImg = await loadImage(await downloadImage(verified_badge_url));
+      drawImageFit(badgeImg, 38, 1413, 74, 74, 'contain', '#ffffff');
+    }
+    drawTextBox(whatsapp_number, 272, 1569, 536, 42, {
+      fontSize: 32,
+      fontWeight: '700',
+      fontFamily: 'Arial',
+      color: '#0b0e75',
+    });
 
     // Return a data URL so n8n can upload the composed image using its ImgBB credential.
     const buffer = canvas.toBuffer('image/png');
