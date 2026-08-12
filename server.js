@@ -23,6 +23,154 @@ app.use(express.json({ limit: '50mb' }));
 
 const IMGBB_API_KEY = process.env.IMGBB_API_KEY;
 
+const DEFAULT_LAYOUT = {
+  canvas: {
+    width: 1080,
+    height: 1650,
+    background: '#ffffff',
+  },
+  elements: [
+    {
+      id: 'product-image',
+      type: 'image',
+      sourceKey: 'product_image_url',
+      x: 32,
+      y: 34,
+      width: 1018,
+      height: 1330,
+      fit: 'cover',
+      fill: '#f4f7f9',
+      borderWidth: 0,
+      borderRadius: 0,
+      zIndex: 10,
+    },
+    {
+      id: 'contact-button',
+      type: 'button',
+      text: 'CONTACT ME',
+      x: 385,
+      y: 1404,
+      width: 310,
+      height: 56,
+      fill: '#172189',
+      color: '#ffffff',
+      borderWidth: 0,
+      borderRadius: 45,
+      fontSize: 36,
+      fontWeight: '600',
+      fontFamily: 'Arial',
+      textAlign: 'center',
+      zIndex: 20,
+    },
+    {
+      id: 'footer-bg',
+      type: 'shape',
+      x: -6,
+      y: 1384,
+      width: 1098,
+      height: 280,
+      fill: '#ffffff',
+      borderWidth: 0,
+      borderRadius: 0,
+      zIndex: 5,
+    },
+    {
+      id: 'profile-photo',
+      type: 'circleImage',
+      sourceKey: 'profile_photo_url',
+      x: 46,
+      y: 1415,
+      width: 217,
+      height: 217,
+      fit: 'cover',
+      fill: '#edf2f7',
+      borderColor: '#00188f',
+      borderWidth: 5,
+      zIndex: 30,
+      visible: true,
+    },
+    {
+      id: 'tc-logo',
+      type: 'image',
+      sourceKey: 'tc_logo_url',
+      x: 793,
+      y: 1396,
+      width: 253,
+      height: 239,
+      fit: 'contain',
+      fill: '#ffffff',
+      borderWidth: 0,
+      borderRadius: 0,
+      zIndex: 30,
+    },
+    {
+      id: 'ref-number',
+      type: 'text',
+      textKey: 'tc_ref',
+      text: 'REF: TC000000',
+      x: 272,
+      y: 1475,
+      width: 536,
+      height: 42,
+      fontSize: 30,
+      fontWeight: '700',
+      fontFamily: 'Arial',
+      color: '#0a348f',
+      textAlign: 'center',
+      verticalAlign: 'middle',
+      zIndex: 35,
+    },
+    {
+      id: 'full-name',
+      type: 'text',
+      textKey: 'full_name',
+      text: 'Bafana Mawasha',
+      x: 272,
+      y: 1508,
+      width: 536,
+      height: 52,
+      fontSize: 42,
+      fontWeight: '800',
+      fontFamily: 'Arial',
+      color: '#0f172a',
+      textAlign: 'center',
+      verticalAlign: 'middle',
+      zIndex: 35,
+    },
+    {
+      id: 'verified-badge',
+      type: 'image',
+      sourceKey: 'verified_badge_url',
+      x: 38,
+      y: 1413,
+      width: 74,
+      height: 74,
+      fit: 'contain',
+      fill: '#ffffff',
+      borderWidth: 0,
+      borderRadius: 0,
+      zIndex: 40,
+    },
+    {
+      id: 'whatsapp-number',
+      type: 'text',
+      textKey: 'whatsapp_number',
+      text: '+27 82 000 0000',
+      x: 272,
+      y: 1569,
+      width: 536,
+      height: 42,
+      fontSize: 32,
+      fontWeight: '700',
+      fontFamily: 'Arial',
+      color: '#0b0e75',
+      textAlign: 'center',
+      verticalAlign: 'middle',
+      zIndex: 35,
+    },
+  ],
+};
+
 // Helper to download images
 async function downloadImage(url) {
   const response = await fetch(url);
@@ -68,21 +216,46 @@ app.post('/api/compose', async (req, res) => {
       });
     }
 
-    const WIDTH = 1080;
-    const HEIGHT = 1650;
+    const WIDTH = DEFAULT_LAYOUT.canvas.width;
+    const HEIGHT = DEFAULT_LAYOUT.canvas.height;
     const canvas = createCanvas(WIDTH, HEIGHT);
     const ctx = canvas.getContext('2d');
+    const values = {
+      ...req.body,
+      tc_ref: referenceNumber,
+    };
 
-    // Background white
-    ctx.fillStyle = '#FFFFFF';
+    ctx.fillStyle = DEFAULT_LAYOUT.canvas.background;
     ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
-    function drawImageFit(img, x, y, width, height, fit = 'cover', fill = '#ffffff', paintFill = true) {
-      if (paintFill) {
-        ctx.fillStyle = fill;
-        ctx.fillRect(x, y, width, height);
+    function drawRoundedRect(x, y, width, height, radius = 0) {
+      const safeRadius = Math.min(radius, width / 2, height / 2);
+      ctx.beginPath();
+      ctx.roundRect(x, y, width, height, safeRadius);
+    }
+
+    function drawBox(element) {
+      ctx.fillStyle = element.fill || '#ffffff';
+      if (element.borderRadius) {
+        drawRoundedRect(element.x, element.y, element.width, element.height, element.borderRadius);
+        ctx.fill();
+      } else {
+        ctx.fillRect(element.x, element.y, element.width, element.height);
       }
 
+      if (element.borderWidth) {
+        ctx.strokeStyle = element.borderColor || '#000000';
+        ctx.lineWidth = element.borderWidth;
+        if (element.borderRadius) {
+          drawRoundedRect(element.x, element.y, element.width, element.height, element.borderRadius);
+          ctx.stroke();
+        } else {
+          ctx.strokeRect(element.x, element.y, element.width, element.height);
+        }
+      }
+    }
+
+    function drawImageFit(img, x, y, width, height, fit = 'cover') {
       const sourceRatio = img.width / img.height;
       const targetRatio = width / height;
       let sourceX = 0;
@@ -108,105 +281,105 @@ app.post('/api/compose', async (req, res) => {
       ctx.drawImage(img, x + (width - drawWidth) / 2, y + (height - drawHeight) / 2, drawWidth, drawHeight);
     }
 
-    function drawTextBox(text, x, y, width, height, options) {
-      const {
-        fontSize,
-        fontWeight,
-        fontFamily,
-        color,
-        textAlign = 'center',
-        verticalAlign = 'middle',
-      } = options;
+    function drawImageElement(element, img) {
+      drawBox(element);
 
-      let size = fontSize;
-      ctx.fillStyle = color;
-      ctx.textAlign = textAlign;
-      ctx.textBaseline = verticalAlign === 'middle' ? 'middle' : 'alphabetic';
+      if (element.borderRadius) {
+        ctx.save();
+        drawRoundedRect(element.x, element.y, element.width, element.height, element.borderRadius);
+        ctx.clip();
+      }
 
-      do {
-        ctx.font = `${fontWeight} ${size}px ${fontFamily}`;
-        size -= 1;
-      } while (ctx.measureText(text).width > width && size >= 20);
+      drawImageFit(img, element.x, element.y, element.width, element.height, element.fit);
 
-      const textX = textAlign === 'center' ? x + width / 2 : x;
-      const textY = verticalAlign === 'middle' ? y + height / 2 : y + height;
-      ctx.fillText(text, textX, textY, width);
+      if (element.borderRadius) {
+        ctx.restore();
+      }
     }
 
-    // Product image is the back-most layer. All footer/profile/text/logo
-    // elements are drawn after this so they always sit above the product art.
-    const productImg = await loadImage(await downloadImage(product_image_url));
-    drawImageFit(productImg, 32, 34, 1018, 1330, 'cover', '#f4f7f9', false);
+    function drawCircleImageElement(element, img) {
+      const radius = Math.min(element.width, element.height) / 2;
+      const centerX = element.x + element.width / 2;
+      const centerY = element.y + element.height / 2;
 
-    // Footer background. This is intentionally taller than the design footer
-    // so product artwork can never show through behind the profile/name/logo.
-    ctx.fillStyle = '#FFFFFF';
-    ctx.fillRect(-6, 1328, 1098, 336);
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+      ctx.closePath();
+      ctx.clip();
+      ctx.fillStyle = element.fill || '#ffffff';
+      ctx.fillRect(element.x, element.y, element.width, element.height);
+      drawImageFit(img, element.x, element.y, element.width, element.height, element.fit);
+      ctx.restore();
 
-    // Contact button
-    ctx.fillStyle = '#172189';
-    ctx.beginPath();
-    ctx.roundRect(385, 1404, 310, 56, 45);
-    ctx.fill();
-    drawTextBox('CONTACT ME', 385, 1404, 310, 56, {
-      fontSize: 36,
-      fontWeight: '600',
-      fontFamily: 'Arial',
-      color: '#ffffff',
-    });
-
-    // Profile photo circle
-    const profileImg = await loadImage(await downloadImage(profile_photo_url));
-    const profileX = 46;
-    const profileY = 1415;
-    const profileSize = 217;
-    const borderWidth = 5;
-    ctx.beginPath();
-    ctx.arc(profileX + profileSize / 2, profileY + profileSize / 2, profileSize / 2 + borderWidth / 2, 0, Math.PI * 2);
-    ctx.strokeStyle = '#00188f';
-    ctx.lineWidth = borderWidth;
-    ctx.stroke();
-
-    ctx.save();
-    ctx.beginPath();
-    ctx.arc(profileX + profileSize / 2, profileY + profileSize / 2, profileSize / 2, 0, Math.PI * 2);
-    ctx.closePath();
-    ctx.clip();
-    drawImageFit(profileImg, profileX, profileY, profileSize, profileSize, 'cover', '#edf2f7');
-    ctx.restore();
-
-    // TC logo
-    if (tc_logo_url) {
-      const tcLogo = await loadImage(await downloadImage(tc_logo_url));
-      drawImageFit(tcLogo, 793, 1396, 253, 239, 'contain', '#ffffff');
+      if (element.borderWidth) {
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius - element.borderWidth / 2, 0, Math.PI * 2);
+        ctx.strokeStyle = element.borderColor || '#000000';
+        ctx.lineWidth = element.borderWidth;
+        ctx.stroke();
+      }
     }
 
-    // Text fields
-    if (referenceNumber) {
-      drawTextBox(referenceNumber, 272, 1475, 536, 42, {
-        fontSize: 30,
-        fontWeight: '700',
-        fontFamily: 'Arial',
-        color: '#0a348f',
-      });
-    }
-    drawTextBox(full_name, 272, 1508, 536, 52, {
-      fontSize: 42,
-      fontWeight: '800',
-      fontFamily: 'Arial',
-      color: '#0f172a',
-    });
+    function drawTextElement(element) {
+      const text = String(values[element.textKey] || element.text || '');
+      let fontSize = element.fontSize;
+      ctx.fillStyle = element.color;
+      ctx.textAlign = element.textAlign || 'center';
+      ctx.textBaseline = element.verticalAlign === 'middle' ? 'middle' : 'alphabetic';
 
-    if (verified_badge_url) {
-      const badgeImg = await loadImage(await downloadImage(verified_badge_url));
-      drawImageFit(badgeImg, 38, 1413, 74, 74, 'contain', '#ffffff');
+      while (fontSize > 20) {
+        ctx.font = `${element.fontWeight || '400'} ${fontSize}px ${element.fontFamily || 'Arial'}`;
+        if (ctx.measureText(text).width <= element.width) break;
+        fontSize -= 1;
+      }
+
+      const textX = element.textAlign === 'center' ? element.x + element.width / 2 : element.x;
+      const textY = element.verticalAlign === 'middle' ? element.y + element.height / 2 : element.y + element.height;
+      ctx.fillText(text, textX, textY);
     }
-    drawTextBox(whatsapp_number, 272, 1569, 536, 42, {
-      fontSize: 32,
-      fontWeight: '700',
-      fontFamily: 'Arial',
-      color: '#0b0e75',
-    });
+
+    const imageCache = new Map();
+    async function getElementImage(element) {
+      const url = values[element.sourceKey];
+      if (!url) return null;
+      if (!imageCache.has(url)) {
+        imageCache.set(url, loadImage(await downloadImage(url)));
+      }
+      return imageCache.get(url);
+    }
+
+    const elements = [...DEFAULT_LAYOUT.elements].sort((a, b) => a.zIndex - b.zIndex);
+    for (const element of elements) {
+      if (element.visible === false) continue;
+
+      if (element.type === 'shape') {
+        drawBox(element);
+        continue;
+      }
+
+      if (element.type === 'button') {
+        drawBox(element);
+        drawTextElement(element);
+        continue;
+      }
+
+      if (element.type === 'text') {
+        drawTextElement(element);
+        continue;
+      }
+
+      if (element.type === 'image') {
+        const img = await getElementImage(element);
+        if (img) drawImageElement(element, img);
+        continue;
+      }
+
+      if (element.type === 'circleImage') {
+        const img = await getElementImage(element);
+        if (img) drawCircleImageElement(element, img);
+      }
+    }
 
     // Return a data URL so n8n can upload the composed image using its ImgBB credential.
     const buffer = canvas.toBuffer('image/png');
